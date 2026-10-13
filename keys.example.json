@@ -1,0 +1,9 @@
+{
+  "_comment": "Copy to keys.json (or ~/.config/paper-scraper/keys.json), fill in only what you use, then: chmod 600 keys.json",
+  "anthropic": "",
+  "gemini": "",
+  "groq": "",
+  "openrouter": "",
+  "openai": "",
+  "xai": ""
+}
