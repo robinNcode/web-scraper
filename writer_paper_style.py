@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
+from urllib.parse import unquote, urlsplit
 
 from .models import Paper
 
@@ -13,7 +15,18 @@ class PaperWriter(Protocol):
 
 
 def _slugify(value: str, max_len: int = 60) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    decoded = unquote(value)
+    parsed = urlsplit(decoded)
+    if parsed.scheme and parsed.netloc:
+        candidate = parsed.path or parsed.netloc
+    else:
+        candidate = decoded
+
+    candidate = candidate.replace("\\", "/").strip("/.")
+    normalized = unicodedata.normalize("NFKC", candidate)
+    slug = re.sub(r"[^\w\s-]", "-", normalized, flags=re.UNICODE)
+    slug = re.sub(r"[\s_-]+", "-", slug, flags=re.UNICODE).strip("-")
+    slug = slug.lower() if slug.isascii() else slug
     return slug[:max_len] or "paper"
 
 

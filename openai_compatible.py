@@ -3,7 +3,7 @@ from __future__ import annotations
 from openai import OpenAI
 
 from .models import Page, Paper
-from .summarizer import SYSTEM_PROMPT, render_source
+from .summarizer import render_source, system_prompt_for_page
 
 
 class OpenAICompatibleSummarizer:
@@ -31,7 +31,7 @@ class OpenAICompatibleSummarizer:
             # Some newer OpenAI models want `max_completion_tokens` instead.
             max_tokens=self._max_output_tokens,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": system_prompt_for_page(page)},
                 {"role": "user", "content": render_source(page, self._max_input_chars)},
             ],
         )

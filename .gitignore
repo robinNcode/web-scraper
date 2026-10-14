@@ -1,6 +1,5 @@
 keys.json
 .env
-papers/
 
 __pycache__/
 *.egg-info/
