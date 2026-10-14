@@ -12,7 +12,11 @@ dependencies = [
 
 [project.scripts]
 paper-scraper = "paper_scraper.cli:main"
+paper-scraper-web = "paper_scraper.web:main"
 
 [tool.setuptools]
 packages = ["paper_scraper"]
 package-dir = {paper_scraper = "."}
+
+[tool.setuptools.package-data]
+paper_scraper = ["webui/*.html", "webui/*.css", "webui/*.js"]
