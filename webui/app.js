@@ -46,7 +46,7 @@ async function loadPapers() {
     list.innerHTML = papers.length
       ? papers.map(paper => `<div class="paper-row">
           <span class="paper-icon">▤</span>
-          <a class="paper-name" href="/api/papers/${encodeURIComponent(paper.name)}" data-preview="${esc(paper.name)}" title="${esc(paper.path)}">${esc(paper.name)}</a>
+          <a class="paper-name" href="/api/papers/${encodeURIComponent(paper.name)}" data-preview="${esc(paper.name)}" data-title="${esc(paper.title || paper.name)}" title="${esc(paper.path)}">${esc(paper.title || paper.name)}</a>
           <span class="paper-date">${esc(paper.modified)}</span>
         </div>`).join('')
       : '<div class="empty">No papers yet. Your finished analyses will show up here.</div>';
@@ -146,10 +146,10 @@ function renderMarkdown(markdown) {
   return output.join('');
 }
 
-async function previewPaper(name) {
+async function previewPaper(name, title = name) {
   const panel = $('#reader');
   panel.classList.remove('hidden');
-  $('#readerTitle').textContent = name;
+  $('#readerTitle').textContent = title;
   $('#markdownBody').innerHTML = '<p>Loading preview…</p>';
   const href = `/api/papers/${encodeURIComponent(name)}`;
   $('#downloadPaper').href = `${href}?download=1`;
@@ -256,7 +256,7 @@ $('#paperList').addEventListener('click', event => {
   const link = event.target.closest('[data-preview]');
   if (link) {
     event.preventDefault();
-    previewPaper(link.dataset.preview);
+    previewPaper(link.dataset.preview, link.dataset.title);
   }
 });
 $('#closeReader').onclick = () => $('#reader').classList.add('hidden');

@@ -7,11 +7,21 @@ from pathlib import Path
 from typing import Protocol
 from urllib.parse import unquote, urlsplit
 
+from indic_transliteration import sanscript
+from indic_transliteration.sanscript import transliterate
+
 from .models import Paper
 
 
 class PaperWriter(Protocol):
     def write(self, paper: Paper) -> Path: ...
+
+
+def to_banglish(value: str) -> str:
+    result = transliterate(value, sanscript.BENGALI, sanscript.ITRANS).strip()
+    if any("\u0980" <= char <= "\u09ff" for char in value):
+        result = result.lower()
+    return result
 
 
 def _slugify(value: str, max_len: int = 60) -> str:
@@ -23,7 +33,7 @@ def _slugify(value: str, max_len: int = 60) -> str:
         candidate = decoded
 
     candidate = candidate.replace("\\", "/").strip("/.")
-    normalized = unicodedata.normalize("NFKC", candidate)
+    normalized = unicodedata.normalize("NFKC", to_banglish(candidate))
     slug = re.sub(r"[^\w\s-]", "-", normalized, flags=re.UNICODE)
     slug = re.sub(r"[\s_-]+", "-", slug, flags=re.UNICODE).strip("-")
     slug = slug.lower() if slug.isascii() else slug

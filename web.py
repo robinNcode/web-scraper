@@ -16,12 +16,18 @@ from urllib.parse import parse_qs, quote, unquote, urlparse
 from .cli import PROVIDERS, build_credentials, build_summarizer
 from .extractor import TrafilaturaExtractor
 from .fetcher import HttpxFetcher
-from .writer import MarkdownPaperWriter
+from .writer import MarkdownPaperWriter, to_banglish
 
 ROOT = Path(__file__).resolve().parent
 UI = ROOT / "webui"
 JOBS: dict[str, dict] = {}
 LOCK = threading.Lock()
+
+
+def paper_display_title(path: Path) -> str:
+    first_line = path.read_text(encoding="utf-8").splitlines()[0:1]
+    title = first_line[0].removeprefix("#").strip() if first_line else path.stem
+    return to_banglish(title)
 
 
 def run_job(job_id: str, options: dict) -> None:
@@ -79,7 +85,7 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/papers":
             out_dir = Path("papers")
             files = sorted(out_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True) if out_dir.exists() else []
-            self._json({"papers": [{"name": p.name, "path": str(p.resolve()), "modified": datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="minutes")} for p in files[:50]]})
+            self._json({"papers": [{"name": p.name, "title": paper_display_title(p), "path": str(p.resolve()), "modified": datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="minutes")} for p in files[:50]]})
         elif parsed.path.startswith("/api/papers/"):
             name = unquote(parsed.path.rsplit("/", 1)[-1])
             if Path(name).name != name or not name.endswith(".md"):
@@ -212,7 +218,7 @@ def application(environ, start_response):
         elif method == "GET" and path == "/api/papers":
             out_dir = Path("papers")
             files = sorted(out_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True) if out_dir.exists() else []
-            json_response({"papers": [{"name": p.name, "path": str(p.resolve()), "modified": datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="minutes")} for p in files[:50]]})
+            json_response({"papers": [{"name": p.name, "title": paper_display_title(p), "path": str(p.resolve()), "modified": datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="minutes")} for p in files[:50]]})
         elif method == "GET" and path.startswith("/api/papers/"):
             name = unquote(path.rsplit("/", 1)[-1])
             if Path(name).name != name or not name.endswith(".md"):

@@ -8,6 +8,7 @@ dependencies = [
     "trafilatura>=1.12",
     "anthropic>=0.40",
     "openai>=1.50",
+    "indic-transliteration>=2.3",
 ]
 
 [project.scripts]
