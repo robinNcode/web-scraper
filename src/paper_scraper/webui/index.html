@@ -8,12 +8,13 @@
   <div class="shell">
     <aside class="rail">
       <a class="brand" href="/"><span class="brand-icon">P</span><span>paper<span class="brand-light">/engine</span></span></a>
-      <div class="rail-label">WORKSPACE</div><button class="nav active" id="newAnalysisNav"><span>✳</span> New analysis</button><button class="nav" id="libraryNav"><span>▤</span> Paper library <span class="nav-count" id="navPaperCount">0</span></button>
+      <div class="rail-label">WORKSPACE</div><a class="nav active" id="newAnalysisNav" href="/"><span>✳</span> New analysis</a><a class="nav" id="libraryNav" href="/library"><span>▤</span> Paper library <span class="nav-count" id="navPaperCount">0</span></a>
       <div class="rail-bottom"><div class="engine-mark"><span class="pulse"></span> Engine ready</div><div class="build">LOCAL WORKSPACE<br>VERSION 0.1</div></div>
     </aside>
     <main>
-      <header><div class="crumb">WORKSPACE <span>/</span> NEW ANALYSIS</div><button class="settings-button" id="settingsToggle">⚙ <span>Settings</span></button></header>
+      <header><div class="crumb">WORKSPACE <span>/</span> <span id="crumbCurrent">NEW ANALYSIS</span></div><button class="settings-button" id="settingsToggle">⚙ <span>Settings</span></button></header>
       <div class="content">
+        <div id="analysisPage" class="page">
         <div class="intro"><div class="eyebrow">RESEARCH WORKFLOW <span>01 — 04</span></div><h1>Turn a page into<br><em>a paper.</em></h1><p>Give the engine a source. It will extract the article, analyse it, and save a Markdown paper to your workspace.</p></div>
         <section class="workflow-card">
           <div class="step-heading"><span class="step-number">01</span><div><h2>Choose a source</h2><p>Paste the article URL you want to analyse.</p></div><span class="step-done">●</span></div>
@@ -25,8 +26,11 @@
           <div class="status hidden" id="status"><div class="spinner"></div><div><strong id="statusTitle">Starting analysis</strong><p id="statusText">Your paper will appear here when it’s ready.</p></div></div>
         </section>
         <section class="settings hidden" id="settings"><div class="section-top"><div><span class="eyebrow">CONFIGURATION</span><h2>Provider key</h2></div><button id="closeSettings" class="close">×</button></div><p>Keys are stored in your local <code>keys.json</code>. Existing keys are never shown.</p><div class="key-row"><select id="keyProvider"></select><input id="apiKey" type="password" placeholder="Paste API key" autocomplete="new-password"><button id="saveKey">Save key</button></div><div id="keyFeedback" class="field-note"></div><div class="key-status" id="keyStatus"></div></section>
-        <section class="library" id="library"><div class="library-header"><div><div class="eyebrow">YOUR WORKSPACE</div><h2>Recent papers <span id="paperCount">—</span></h2></div><button class="refresh" id="refreshPapers">↻ &nbsp;Refresh</button></div><div class="paper-list" id="paperList"><div class="empty">No papers yet. Your finished analyses will show up here.</div></div></section>
+        </div>
+        <section id="libraryPage" class="page hidden">
+        <section class="library" id="library"><div class="library-header"><div><div class="eyebrow">YOUR WORKSPACE</div><h2>Paper library <span id="paperCount">—</span></h2></div><button class="refresh" id="refreshPapers">↻ &nbsp;Refresh</button></div><div class="paper-list" id="paperList"><div class="empty">No papers yet. Your finished analyses will show up here.</div></div></section>
         <section class="reader hidden" id="reader" aria-modal="true" role="dialog" aria-labelledby="readerTitle"><div class="reader-head"><div><div class="eyebrow">PAPER PREVIEW</div><h2 id="readerTitle">Loading paper…</h2></div><div class="reader-actions"><a id="downloadPaper" class="refresh" download>↓ <span>Download</span></a><button id="closeReader" class="close" aria-label="Close preview">×</button></div></div><article class="markdown-body" id="markdownBody"></article></section>
+        </section>
         <footer><span>✳ &nbsp; PAPER ENGINE</span><span>Local by design <b>·</b> Markdown output</span></footer>
       </div>
     </main>

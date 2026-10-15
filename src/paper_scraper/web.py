@@ -11,17 +11,23 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from wsgiref.simple_server import make_server
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from .cli import PROVIDERS, build_credentials, build_summarizer
 from .extractor import TrafilaturaExtractor
 from .fetcher import HttpxFetcher
-from .writer import MarkdownPaperWriter
+from .writer import MarkdownPaperWriter, to_banglish
 
 ROOT = Path(__file__).resolve().parent
 UI = ROOT / "webui"
 JOBS: dict[str, dict] = {}
 LOCK = threading.Lock()
+
+
+def paper_display_title(path: Path) -> str:
+    first_line = path.read_text(encoding="utf-8").splitlines()[0:1]
+    title = first_line[0].removeprefix("#").strip() if first_line else path.stem
+    return to_banglish(title)
 
 
 def run_job(job_id: str, options: dict) -> None:
@@ -79,7 +85,7 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/papers":
             out_dir = Path("papers")
             files = sorted(out_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True) if out_dir.exists() else []
-            self._json({"papers": [{"name": p.name, "path": str(p.resolve()), "modified": datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="minutes")} for p in files[:50]]})
+            self._json({"papers": [{"name": p.name, "title": paper_display_title(p), "path": str(p.resolve()), "modified": datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="minutes")} for p in files[:50]]})
         elif parsed.path.startswith("/api/papers/"):
             name = unquote(parsed.path.rsplit("/", 1)[-1])
             if Path(name).name != name or not name.endswith(".md"):
@@ -92,6 +98,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/markdown; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.send_header("X-Content-Type-Options", "nosniff")
+            if parse_qs(parsed.query).get("download") == ["1"]:
+                self.send_header("Content-Disposition", f"attachment; filename*=UTF-8''{quote(name, safe='')}")
             self.end_headers()
             self.wfile.write(body)
         elif parsed.path.startswith("/api/jobs/"):
@@ -99,7 +107,7 @@ class Handler(BaseHTTPRequestHandler):
             with LOCK:
                 job = JOBS.get(job_id)
             self._json(job or {"error": "Unknown operation"}, 404 if job is None else 200)
-        elif parsed.path == "/" or parsed.path == "/index.html":
+        elif parsed.path in {"/", "/index.html", "/library", "/library/"}:
             self._file(UI / "index.html", "text/html; charset=utf-8")
         elif parsed.path in {"/style.css", "/app.js"}:
             name = parsed.path[1:]
@@ -188,6 +196,7 @@ def application(environ, start_response):
     method = environ.get("REQUEST_METHOD", "GET")
     path = environ.get("PATH_INFO", "/")
     status, content_type, body = "200 OK", "text/plain; charset=utf-8", b""
+    extra_headers = []
 
     def json_response(data, code=200):
         nonlocal status, content_type, body
@@ -196,7 +205,7 @@ def application(environ, start_response):
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
 
     try:
-        if method == "GET" and path in {"/", "/index.html"}:
+        if method == "GET" and path in {"/", "/index.html", "/library", "/library/"}:
             content_type, body = "text/html; charset=utf-8", (UI / "index.html").read_bytes()
         elif method == "GET" and path in {"/style.css", "/app.js"}:
             filename = path.lstrip("/")
@@ -209,7 +218,7 @@ def application(environ, start_response):
         elif method == "GET" and path == "/api/papers":
             out_dir = Path("papers")
             files = sorted(out_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True) if out_dir.exists() else []
-            json_response({"papers": [{"name": p.name, "path": str(p.resolve()), "modified": datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="minutes")} for p in files[:50]]})
+            json_response({"papers": [{"name": p.name, "title": paper_display_title(p), "path": str(p.resolve()), "modified": datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="minutes")} for p in files[:50]]})
         elif method == "GET" and path.startswith("/api/papers/"):
             name = unquote(path.rsplit("/", 1)[-1])
             if Path(name).name != name or not name.endswith(".md"):
@@ -220,6 +229,8 @@ def application(environ, start_response):
                     json_response({"error": "Paper not found"}, 404)
                 else:
                     content_type, body = "text/markdown; charset=utf-8", paper_path.read_bytes()
+                    if parse_qs(environ.get("QUERY_STRING", "")).get("download") == ["1"]:
+                        extra_headers.append(("Content-Disposition", f"attachment; filename*=UTF-8''{quote(name, safe='')}"))
         elif method == "GET" and path.startswith("/api/jobs/"):
             with LOCK:
                 job = JOBS.get(path.rsplit("/", 1)[-1])
@@ -260,7 +271,7 @@ def application(environ, start_response):
         logging.exception("Request failed")
         json_response({"error": str(exc)}, 400)
 
-    start_response(status, [("Content-Type", content_type), ("Content-Length", str(len(body))), ("Cache-Control", "no-store"), ("X-Content-Type-Options", "nosniff")])
+    start_response(status, [("Content-Type", content_type), ("Content-Length", str(len(body))), ("Cache-Control", "no-store"), ("X-Content-Type-Options", "nosniff"), *extra_headers])
     return [body]
 
 
