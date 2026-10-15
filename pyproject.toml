@@ -1,7 +1,11 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "paper-scraper"
 version = "0.1.0"
-description = "Scrape a web page and summarize it as a Criticise with refrences against it's content's hightlighted statments Markdown file."
+description = "Scrape web pages and summarize them as research-paper-style Markdown."
 requires-python = ">=3.10"
 dependencies = [
     "httpx>=0.27",
@@ -15,9 +19,9 @@ dependencies = [
 paper-scraper = "paper_scraper.cli:main"
 paper-scraper-web = "paper_scraper.web:main"
 
-[tool.setuptools]
-packages = ["paper_scraper"]
-package-dir = {paper_scraper = "."}
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["paper_scraper*"]
 
 [tool.setuptools.package-data]
 paper_scraper = ["webui/*.html", "webui/*.css", "webui/*.js"]

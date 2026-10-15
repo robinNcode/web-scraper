@@ -2,9 +2,28 @@
 
 Analyse a web page and write a Markdown paper with an AI provider.
 
+## Development setup
+
+The application package lives under `src/paper_scraper/`, tests are in
+`tests/`, and generated papers and local credentials stay in the project root.
+From the project folder, create an environment and install the project in
+editable mode:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+```
+
+Run the tests with:
+
+```bash
+python -m unittest discover -s tests
+```
+
 ## Web interface
 
-Run the local interface from the project folder:
+After installing the project, run the local interface from the project folder:
 
 ```bash
 python -m paper_scraper.web
